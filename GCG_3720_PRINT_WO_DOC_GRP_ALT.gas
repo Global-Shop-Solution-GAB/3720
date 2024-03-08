@@ -1,0 +1,266 @@
+Program.Sub.ScreenSU.Start
+Gui.F_Main..create
+Gui.F_Main..caption("Print Documents")
+Gui.F_Main..size(5760,6375)
+Gui.F_Main..position(0,0)
+Gui.F_Main..event(UnLoad,form1_unload)
+Gui.F_Main..alwaysontop(False)
+Gui.F_Main..fontname("Arial")
+Gui.F_Main..fontsize(8)
+Gui.F_Main..forecolor(0)
+Gui.F_Main..fontstyle(,,,)
+Gui.F_Main..BackColor(-2147483633)
+Gui.F_Main..controlbox(True)
+Gui.F_Main..maxbutton(True)
+Gui.F_Main..minbutton(True)
+Gui.F_Main..mousepointer(0)
+Gui.F_Main..moveable(True)
+Gui.F_Main..sizeable(True)
+Gui.F_Main..ShowInTaskBar(True)
+Gui.F_Main..titlebar(True)
+Gui.F_Main..MinX(0)
+Gui.F_Main..MinY(0)
+Gui.F_Main.gsflexgrid1.create(gsflexgrid)
+Gui.F_Main.gsflexgrid1.FixedRows(0)
+Gui.F_Main.gsflexgrid1.FixedCols(0)
+Gui.F_Main.gsflexgrid1.visible(True)
+Gui.F_Main.gsflexgrid1.size(5115,4860)
+Gui.F_Main.gsflexgrid1.zorder(0)
+Gui.F_Main.gsflexgrid1.position(200,200)
+Gui.F_Main.gsflexgrid1.enabled(True)
+Gui.F_Main.cmdPrint.create(button)
+Gui.F_Main.cmdPrint.caption("Print")
+Gui.F_Main.cmdPrint.visible(True)
+Gui.F_Main.cmdPrint.size(855,375)
+Gui.F_Main.cmdPrint.zorder(0)
+Gui.F_Main.cmdPrint.position(200,5275)
+Gui.F_Main.cmdPrint.enabled(True)
+Gui.F_Main.cmdPrint.fontname("Arial")
+Gui.F_Main.cmdPrint.fontsize(8)
+Gui.F_Main.cmdPrint.event(Click,cmdprint_click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+'Hook 16090
+V.Local.sError.Declare(String)
+
+F.Intrinsic.Control.If(V.Passed.009001,<>,"001811")
+	F.Intrinsic.control.End
+
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+F.Intrinsic.Control.CallSub(Buildstyle)
+
+F.Intrinsic.Control.CallSub(Load)
+
+F.Intrinsic.Control.If(V.Screen.F_Main!gsflexgrid1.Rows,>,1)
+	Gui.F_Main..show
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3044_PRINT_WO_DOC_GRP_ALT.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Form1_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+Program.Sub.cmdprint_click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdprint_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+'Hook 16090
+V.Local.sError.Declare(String)
+V.Local.stemp.Declare(String)
+V.Local.irow.Declare(Long)
+V.Local.irows.Declare(Long)
+V.Local.iHandle.Declare(Long)
+V.Local.sprinter.Declare(String)
+
+Gui.F_Main.cmdPrint.Enabled(false)
+
+V.Local.stemp.Redim(0,2)
+V.Local.sprinter.Set(V.Printer.DefaultPrinter)
+F.Intrinsic.Printer.SELECTPRINTERDIALOG
+
+F.Intrinsic.Control.If(V.Ambient.PrinterDialogSelection,<>,"***CANCEL***")
+	F.Intrinsic.Printer.SetDefaultPrinter(V.Ambient.printerDialogSelection)
+
+	F.Intrinsic.Math.Sub(V.Screen.F_Main!gsflexgrid1.Rows,1,V.Local.irows)
+
+	F.Intrinsic.Control.For(V.Local.irow,1,V.Local.irows,1)
+		Gui.F_Main.gsflexgrid1.GetTextMatrix(0,V.Local.irow,V.Local.stemp)
+		F.Intrinsic.Control.If(V.Local.stemp,=,1)
+			Gui.f_main.gsflexgrid1.GetTextMatrix(1,V.Local.irow,V.Local.stemp)
+			Gui.F_Main.gsflexgrid1.GetTextMatrix(2,V.Local.irow,V.Local.sTemp(1))
+			F.Intrinsic.String.Build("{0}{1}",V.Local.stemp,V.Local.stemp(1),V.Local.stemp(2))
+			F.Intrinsic.task.ShellExec(V.Caller.Handle,"PRINT",V.local.sTemp(2),"","",5)
+		F.Intrinsic.Control.endif
+	F.Intrinsic.Control.Next(V.Local.irow)
+
+	F.Intrinsic.Printer.SetDefaultPrinter(V.Local.sprinter)
+
+F.Intrinsic.Control.Else
+	Gui.F_Main.cmdPrint.Enabled(TRUE)
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdprint_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3044_PRINT_WO_DOC_GRP_ALT.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Form1_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.cmdprint_click.End
+
+Program.Sub.form1_unload.Start
+F.Intrinsic.Control.SetErrorHandler("form1_unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("form1_unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3044_PRINT_WO_DOC_GRP_ALT.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.form1_unload.End
+
+Program.Sub.Buildstyle.Start
+F.Intrinsic.Control.SetErrorHandler("Buildstyle_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+Gui.F_Main.gsflexgrid1.Cols(3)
+Gui.F_Main.gsflexgrid1.Rows(1)
+Gui.F_Main.gsflexgrid1.FixedRows(1)
+
+Gui.F_Main.gsflexgrid1.ColWidth(0,500)
+Gui.F_Main.gsflexgrid1.ColWidth(1,0)
+Gui.F_Main.gsflexgrid1.ColWidth(2,3500)
+
+Gui.F_Main.gsflexgrid1.BuildStyle(1,0,"type","checkbox",1)
+Gui.F_Main.gsflexgrid1.BuildStyle(1,1,"type","locked",True)
+Gui.F_Main.gsflexgrid1.BuildStyle(1,2,"type","locked",True)
+Gui.F_Main.gsflexgrid1.BuildStyle(2,2,"Format","Alignment",4)
+Gui.F_Main.gsflexgrid1.BuildStyle(2,2,"Type","Locked",True)
+Gui.F_Main.gsflexgrid1.BuildStyle(2,1,"Type","Locked",True)
+Gui.F_Main.gsflexgrid1.BuildStyle(2,0,"Type","Locked",True)
+
+Gui.F_Main.gsflexgrid1.TextMatrix(2,0,"File")
+Gui.F_Main.gsflexgrid1.ApplyStyle(0,2)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Buildstyle_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3044_PRINT_WO_DOC_GRP_ALT.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Form1_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Buildstyle.End
+
+Program.Sub.Load.Start
+F.Intrinsic.Control.SetErrorHandler("Load_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sQuery.Declare(String)
+V.Local.sTemp.Declare(String)
+V.Local.iLinkID.Declare(Long)
+V.Local.iRow.Declare(Long)
+V.Local.iRows.Declare(Long,1)
+V.Local.sPart.Declare(String)
+V.Local.sPartRev.Declare(String)
+
+'checks all combos of job suffix router_seq to find a reference.
+F.Intrinsic.String.Build("SELECT DISTINCT PARTNO FROM BI_BAR_HEAD WHERE TERMINAL = '{0}' ORDER BY JOB, SUFFIX ",V.Caller.Terminal,V.Local.sQuery)
+F.ODBC.Connection!con.OpenRecordsetRO("rstPart",V.Local.sQuery)
+
+F.Intrinsic.Control.DoUntil(V.ODBC.con!rstPart.EOF,=,True)
+	F.ODBC.Connection!con.OpenRecordsetRO("rstGrpID","SELECT GRP_ID FROM GCG_3720_PRINT_DOCGR WHERE TYPE = 1 and PRINT_FLAG = 1")
+	'The part has a space in it so we need to get rid of it
+	F.Intrinsic.String.Split(V.ODBC.con!rstPart.FieldValTrim!PARTNO,"   ",V.Local.sPart)
+	'Redim just in case there was no Rev
+	V.Local.sPart.RedimPreserve(0,1)
+	F.Intrinsic.String.GSSPartString(V.Local.sPart(0),V.Local.sPart(1),V.Local.sPartRev)
+	'creates the referene to cmpare to
+	F.Global.DocumentControl.CreateReference(V.Local.sPartRev.Trim,30,V.Local.iLinkID)
+	F.Intrinsic.Control.If(V.Local.iLinkID,>,0)
+		'add the references to the flexgrid
+		F.Intrinsic.Control.DoUntil(V.ODBC.con!rstGrpID.EOF,=,True)
+			F.Intrinsic.String.Build("SELECT * FROM ATG_DOC_ASSOC WHERE LINK_ID = '{0}' AND GRP_ID = '{1}' ",V.Local.iLinkID,V.ODBC.con!rstGrpID.FieldVal!GRP_ID,V.Local.sQuery)
+			F.ODBC.Connection!con.OpenRecordsetRO("rstDocID",V.Local.sQuery)
+
+			F.Intrinsic.Control.DoUntil(V.ODBC.con!rstDocID.EOF,=,True)
+				F.Intrinsic.String.Right(V.ODBC.con!rstDocID.FieldValTrim!PATH,1,V.Local.sTemp)
+				F.Intrinsic.Control.If(V.Local.sTemp,=,"\")
+					V.Local.stemp.Set(V.ODBC.con!rstDocID.FieldValTrim!PATH)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.String.Build("{0}\{1}",V.ODBC.con!rstDocID.FieldValTrim!PATH,V.ODBC.con!rstDocID.FieldValTrim!FILE,V.Local.sTemp)
+				F.Intrinsic.Control.endif
+				F.Intrinsic.math.Add(V.Local.iRows,1,V.Local.iRows)
+				F.Intrinsic.Math.Add(V.Local.iRow,1,V.Local.iRow)
+				Gui.F_Main.gsflexgrid1.Rows(V.Local.iRows)
+				Gui.F_Main.gsflexgrid1.TextMatrix(0,V.Local.iRow,1)
+				Gui.F_Main.gsflexgrid1.TextMatrix(1,V.Local.iRow,V.local.sTemp)
+				Gui.F_Main.gsflexgrid1.Textmatrix(2,V.Local.iRow,V.ODBC.con!rstDocID.FieldValTrim!FILE)
+				Gui.F_Main.gsflexgrid1.ApplyStyle(V.Local.iRow,1)
+				F.ODBC.con!rstDocID.MoveNext
+			F.Intrinsic.control.loop
+			F.ODBC.con!rstDocID.Close
+			F.odbc.con!rstGrpID.MoveNext
+		F.Intrinsic.Control.Loop
+	F.Intrinsic.Control.EndIf
+
+	F.ODBC.con!rstgrpid.Close
+	F.ODBC.con!rstPart.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.con!rstPart.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Load_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3044_PRINT_WO_DOC_GRP_ALT.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Form1_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Load.End
+
+Program.Sub.Comments.Start
+${$0$}$$}$$}$12:00:00 AM$}$False
+${$3$}$0$}$$}$-1$}$-1$}$$}$1/1/1900$}$Selection grid will poup up at the end and ask the user which documents to print.
+Program.Sub.Comments.End
